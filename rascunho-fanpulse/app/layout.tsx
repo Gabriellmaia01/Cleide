@@ -28,8 +28,6 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <head>
-        {/* Tailwind CSS via CDN (dev) — em produção será via PostCSS build */}
-        <script src="https://cdn.tailwindcss.com"></script>
         {/* Google Font: Poppins */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link

@@ -1,6 +1,48 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+
+interface RankingPlayer {
+  id: string;
+  position: number;
+  name: string;
+  country: string;
+  country_code: string;
+  total_votes: number;
+  image_url: string;
+}
 
 export default function FanVoteHome() {
+  const [players, setPlayers] = useState<RankingPlayer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [totalSiteVotes, setTotalSiteVotes] = useState(0);
+
+  useEffect(() => {
+    async function fetchRanking() {
+      try {
+        const res = await fetch('/api/ranking');
+        const data = await res.json();
+        if (data.success) {
+          const fetchedPlayers = data.data as RankingPlayer[];
+          setPlayers(fetchedPlayers.slice(0, 4));
+          
+          // Calcula o total de votos somando todos os jogadores
+          const total = fetchedPlayers.reduce((acc, p) => acc + Number(p.total_votes), 0);
+          setTotalSiteVotes(total);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar ranking:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchRanking();
+  }, []);
+
+  // Calcula o máximo de votos para fazer a barra de porcentagem
+  const maxVotes = Math.max(...players.map(p => Number(p.total_votes)), 1);
+
   return (
     <>
       <header>
@@ -11,7 +53,7 @@ export default function FanVoteHome() {
             <span>Copa 2026</span>
           </div>
         </div>
-        <div className="profile">👤</div>
+        <Link href="/perfil" className="profile">👤</Link>
       </header>
 
       <section className="hero">
@@ -26,9 +68,9 @@ export default function FanVoteHome() {
             Participe da maior votação de fãs e ajude a escolher
             os melhores da Copa do Mundo 2026
           </p>
-          <button className="hero-btn">
+          <Link href="/votacao" className="hero-btn inline-flex items-center justify-center">
             Começar a Votar
-          </button>
+          </Link>
         </div>
       </section>
 
@@ -58,121 +100,79 @@ export default function FanVoteHome() {
         <div className="players-top">
           <div>
             <h2 className="section-title">Jogadores em Destaque</h2>
-            <p className="subtitle">Vote nos seus favoritos agora!</p>
+            <p className="subtitle">Líderes atuais do ranking!</p>
           </div>
-          <a href="#" className="view-all">Ver Todos</a>
+          <Link href="/ranking" className="view-all">Ver Todos</Link>
         </div>
         
-        {/* Aqui entram os cards dos jogadores! */}
         <div className="players-grid" id="playersGrid">
-          
-          {/* Neymar */}
-          <div className="player-card">
-            <div className="player-image">
-              {/* Você pode trocar esse link pela imagem exportada do seu Figma depois */}
-              <img src="/imagens/neymar.jpg" alt="Neymar Jr." />
-              <div className="percentage">📈 68%</div>
+          {loading ? (
+            <div className="flex justify-center w-full py-10">
+               <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
             </div>
-            <div className="player-info">
-              <h2>Neymar Jr.</h2>
-              <p className="country">BR Brasil</p>
-              <div className="votes">
-                <span>Votos</span>
-                <span>234.567</span>
-              </div>
-              <div className="bar">
-                <div className="fill" style={{ width: '68%' }}></div>
-              </div>
-              <button className="vote-btn">♡ Votar</button>
+          ) : players.length === 0 ? (
+            <div className="text-center py-10 w-full text-gray-500">
+               Nenhum voto computado ainda.
             </div>
-          </div>
-
-          {/* Messi */}
-          <div className="player-card">
-            <div className="player-image">
-              <img src="/imagens/messi.jpg" alt="Lionel Messi" />
-              <div className="percentage">📈 82%</div>
-            </div>
-            <div className="player-info">
-              <h2>Lionel Messi</h2>
-              <p className="country">AR Argentina</p>
-              <div className="votes">
-                <span>Votos</span>
-                <span>312.456</span>
-              </div>
-              <div className="bar">
-                <div className="fill" style={{ width: '82%' }}></div>
-              </div>
-              <button className="vote-btn">♡ Votar</button>
-            </div>
-          </div>
-
-          {/* Mbappé */}
-          <div className="player-card">
-            <div className="player-image">
-              <img src="/imagens/mbappe.jpg" alt="Kylian Mbappé" />
-              <div className="percentage">📈 75%</div>
-            </div>
-            <div className="player-info">
-              <h2>Kylian Mbappé</h2>
-              <p className="country">FR França</p>
-              <div className="votes">
-                <span>Votos</span>
-                <span>198.765</span>
-              </div>
-              <div className="bar">
-                <div className="fill" style={{ width: '75%' }}></div>
-              </div>
-              <button className="vote-btn">♡ Votar</button>
-            </div>
-          </div>
-
-          {/* Cristiano Ronaldo */}
-          <div className="player-card">
-            <div className="player-image">
-              <img src="/imagens/cr7.jpg" alt="Cristiano Ronaldo" />
-              <div className="percentage">📈 79%</div>
-            </div>
-            <div className="player-info">
-              <h2>Cristiano Ronaldo</h2>
-              <p className="country">PT Portugal</p>
-              <div className="votes">
-                <span>Votos</span>
-                <span>287.543</span>
-              </div>
-              <div className="bar">
-                <div className="fill" style={{ width: '79%' }}></div>
-              </div>
-              <button className="vote-btn">♡ Votar</button>
-            </div>
-          </div>
-
+          ) : (
+            players.map((player) => {
+              const percentage = Math.round((Number(player.total_votes) / maxVotes) * 100) || 0;
+              
+              return (
+                <div className="player-card" key={player.id}>
+                  <div className="player-image">
+                    <img 
+                      src={player.image_url || '/imagens/placeholder.jpg'} 
+                      alt={player.name} 
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2VlZSIvPjwvc3ZnPg==';
+                      }}
+                    />
+                    <div className="percentage">📈 {percentage}%</div>
+                  </div>
+                  <div className="player-info">
+                    <h2 className="truncate">{player.name}</h2>
+                    <p className="country">{player.country}</p>
+                    <div className="votes">
+                      <span>Votos</span>
+                      <span>{Number(player.total_votes).toLocaleString('pt-BR')}</span>
+                    </div>
+                    <div className="bar">
+                      <div className="fill" style={{ width: `${percentage}%` }}></div>
+                    </div>
+                    <Link href="/votacao" className="vote-btn">♡ Votar</Link>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </section>
 
       <section className="live-section">
         <h3>🔥 VOTAÇÃO AO VIVO</h3>
-        <h1 id="liveVotes">1.234.567</h1>
-        <p>votos computados nas últimas 24 horas</p>
+        <h1 id="liveVotes">{totalSiteVotes.toLocaleString('pt-BR')}</h1>
+        <p>votos computados até o momento</p>
       </section>
 
       <nav className="bottom-nav">
-        <div className="nav-item active">
+        <Link href="/" className="nav-item active">
           <div className="nav-icon">⌂</div>
           <span>Início</span>
-        </div>
-        <div className="nav-item">
+        </Link>
+        <Link href="/votacao" className="nav-item">
           <div className="nav-icon">☑</div>
           <span>Votação</span>
-        </div>
-        <div className="nav-item">
+        </Link>
+        <Link href="/ranking" className="nav-item">
           <div className="nav-icon">🏆</div>
           <span>Ranking</span>
-        </div>
-        <div className="nav-item">
+        </Link>
+        <Link href="/perfil" className="nav-item">
           <div className="nav-icon">👤</div>
           <span>Perfil</span>
-        </div>
+        </Link>
       </nav>
     </>
   );

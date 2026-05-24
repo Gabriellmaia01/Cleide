@@ -52,7 +52,7 @@ export function middleware(request: NextRequest) {
   if (PROTECTED_API_ROUTES.some((route) => pathname.startsWith(route))) {
     // Verifica se é um POST (GET é público para consultar votos)
     if (request.method === 'POST') {
-      const token = request.cookies.get('fanpulse_token')?.value;
+      const token = request.cookies.get('fanpulse_session')?.value;
 
       if (!token) {
         return Response.json(

@@ -215,16 +215,12 @@ export async function GET(request: NextRequest) {
  * Retorna null se não autenticado.
  */
 async function getUserIdFromRequest(request: NextRequest): Promise<string | null> {
-  const token = request.cookies.get('fanpulse_token')?.value;
-  if (!token) return null;
+  const sessionValue = request.cookies.get('fanpulse_session')?.value;
+  if (!sessionValue) return null;
 
   try {
-    const jwt = await import('jsonwebtoken');
-    const secret = process.env.JWT_SECRET;
-    if (!secret) return null;
-
-    const decoded = jwt.verify(token, secret) as { userId: string };
-    return decoded.userId;
+    const session = JSON.parse(sessionValue);
+    return session.id || null;
   } catch {
     return null;
   }
